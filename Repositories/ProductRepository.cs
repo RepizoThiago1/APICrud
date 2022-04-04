@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-
-namespace APICrud.Repositories
+﻿namespace APICrud.Repositories
 {
     public class ProductRepository : IProductRepository
     {
@@ -10,94 +8,59 @@ namespace APICrud.Repositories
         {
             _context = context;
         }
+        public async Task<IEnumerable<Product>> GetProductList()
+        {
+            return await _context.Products.ToListAsync();
+        }
+        public async Task<Product> GetProductById(int Id)
+        {
+            var dbResult = await _context.Products.FirstOrDefaultAsync(p => p.Id == Id);
 
-        public List<Product> GetProductList()
-        {
-            try
+            if (dbResult is null)
             {
-                return _context.Products.ToList();
+                return null;
             }
-            catch (Exception err)
-            {
-                throw new Exception(err.Message);
-            }
-            return null;
+
+            return dbResult;
         }
-        public Product GetProductById(int id)
+
+        public async Task<Product> AddProduct(Product product)
         {
-            var findDbProduct = _context.Products.Find(id);
-            try
-            {
-                if (findDbProduct is null)
-                {
-                    return null;
-                }
-            }
-            catch (Exception err)
-            {
-                throw new Exception(err.Message);
-            }
-            return findDbProduct;
+            var dbResult = await _context.Products.AddAsync(product);
+            await _context.SaveChangesAsync();
+
+            return dbResult.Entity;
         }
-        public Product AddProduct(Product product)
+        public async Task<Product> EditProduct(Product product)
         {
-            try
+            var dbResult = await _context.Products.FirstOrDefaultAsync(p => p.Id == product.Id);
+
+            if (dbResult is not null)
             {
-                if (product is not null)
-                {
-                    _context.Products.Add(product);
-                    _context.SaveChanges();
-                    return product;
-                }
+                dbResult.Name = product.Name;
+                dbResult.Price = product.Price;
+                dbResult.Description = product.Description;
+
+                await _context.SaveChangesAsync();
+
+                return dbResult;
             }
-            catch (Exception err)
-            {
-                throw new Exception(err.Message);
-            }
+
             return null;
         }
 
-        public Product EditProduct(Product product)
+        public async Task<Product> DeleteProductById(int Id)
         {
-            try
-            {
-                var findDbProduct = _context.Products.Find(product.Id);
-                if (findDbProduct is null)
-                {
-                    return null;
-                }
+            var dbResult = await _context.Products.FirstOrDefaultAsync(p => p.Id == Id);
 
-                findDbProduct.Name = product.Name;
-                findDbProduct.Price = product.Price;
-                findDbProduct.Description = product.Description;
-                _context.SaveChanges();
-
-                return product;
-            }
-            catch (Exception err)
+            if (dbResult is not null)
             {
-                throw new Exception(err.Message);
+                _context.Remove(dbResult);
+                await _context.SaveChangesAsync();
+               
+                return dbResult;
             }
-        }
-
-        public bool DeleteProductById(int id)
-        {
-            var findDbProduct = _context.Products.Find(id);
-            try
-            {
-                if (findDbProduct is null)
-                {
-                    return false;
-                }
-                _context.Products.Remove(findDbProduct);
-                _context.SaveChanges();
-                return true;
-            }
-            catch (Exception err)
-            {
-                throw new Exception(err.Message);
-            }
-            
+            return null;
         }
     }
 }

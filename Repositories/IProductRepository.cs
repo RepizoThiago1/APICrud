@@ -4,10 +4,10 @@ namespace APICrud.Repositories
 {
     public interface IProductRepository
     {
-        public List<Product> GetProductList();
-        public Product GetProductById(int Id);
-        public bool DeleteProductById(int Id);
-        public Product AddProduct(Product product);
-        public Product EditProduct(Product product);
+        public Task<IEnumerable<Product>> GetProductList();
+        public Task<Product> GetProductById(int Id);
+        public Task<Product> AddProduct(Product product);
+        public Task<Product> EditProduct(Product product);
+        public Task<Product> DeleteProductById(int Id);
     }
 }

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace APICrud.Controllers
 {
@@ -6,66 +7,103 @@ namespace APICrud.Controllers
     [ApiController]
     public class ProductController : ControllerBase
     {
-        private readonly DataContext _context;
+        public readonly IProductRepository _productRepository;
 
-        public ProductController(DataContext context)
+        public ProductController(IProductRepository productRepository)
         {
-            _context = context;
+            _productRepository = productRepository;
         }
 
-        #region http methods
         [HttpGet]
-        public ActionResult<List<Product>> GetProductList()
+        public async Task<ActionResult<IEnumerable<Product>>> GetProductList()
         {
-            return Ok(_context.Products.ToList());
+            try
+            {
+                var dbQueryList = await _productRepository.GetProductList();
+
+                if (dbQueryList is null)
+                {
+                    return NotFound("Produto não encontrado");
+                }
+                return Ok(dbQueryList);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message); ;
+            }
+
         }
 
         [HttpGet("{id}")]
-        public ActionResult<List<Product>> GetSingleProduct(int Id)
+        public async Task<ActionResult<List<Product>>> GetProductById(int id)
         {
-            var product = _context.Products.Find(Id);
-            if (product == null)
-            {
-                return BadRequest("Produto não encontrado");
-            }
-            return Ok(product);
-        }
+            var findProduct = await _productRepository.GetProductById(id);
 
-
-        [HttpPost]
-        public ActionResult<List<Product>> AddProduct(Product product)
-        {
-            return Ok(_context.Products.ToList());
-        }
-
-        [HttpPut]
-        public ActionResult<List<Product>> EditProduct(Product product)
-        {
-            var findDbProduct = _context.Products.Find(product.Id);
-            if (findDbProduct == null)
-            {
-                return BadRequest("Produto não encontrado");
-            }
-            findDbProduct.Name = product.Name;
-            findDbProduct.Price = product.Price;
-            findDbProduct.Description = product.Description;
-            _context.SaveChanges();
-
-            return Ok(_context.Products.ToList());
-        }
-
-        [HttpDelete("{id}")]
-        public ActionResult<List<Product>> DeleteProductById(Product product)
-        {
-            var findDbProduct = _context.Products.Find(product.Id);
-            if (findDbProduct == null)
+            if (findProduct is null)
             {
                 return NotFound("Produto não encontrado");
             }
-            _context.Products.Remove(findDbProduct);
-            return Ok(_context.Products.ToList());
+
+            return Ok(findProduct);
+
         }
 
-        #endregion
+        [HttpPost]
+        public async Task<ActionResult<List<Product>>> AddProduct(Product product)
+        {
+            try
+            {
+                if (product is null)
+                {
+                    return BadRequest("Produto que foi inserido é nulo");
+                }
+                var productAdd = await _productRepository.AddProduct(product);
+
+                return Ok(productAdd);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+
+        }
+
+        [HttpPut]
+        public async Task<ActionResult<Product>> EditProduct(Product product)
+        {
+            try
+            {
+                var productEdit = await _productRepository.EditProduct(product);
+
+                if (product is null)
+                {
+                    return NotFound("Produto não encontrado");
+                }
+                return Ok(productEdit);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<ActionResult<Product>> DeleteProductById(int id)
+        {
+            try
+            {
+                var product = await _productRepository.GetProductById(id);
+
+                if (product is null)
+                {
+                    return NotFound("Produto não encontrado");
+                }
+                return await _productRepository.DeleteProductById(id);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
     }
 }
