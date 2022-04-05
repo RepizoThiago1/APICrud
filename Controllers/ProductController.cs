@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 
 namespace APICrud.Controllers
 {
@@ -37,14 +36,21 @@ namespace APICrud.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<List<Product>>> GetProductById(int id)
         {
-            var findProduct = await _productRepository.GetProductById(id);
-
-            if (findProduct is null)
+            try
             {
-                return NotFound("Produto não encontrado");
-            }
+                var findProduct = await _productRepository.GetProductById(id);
 
-            return Ok(findProduct);
+                if (findProduct is null)
+                {
+                    return NotFound("Produto não encontrado");
+                }
+
+                return Ok(findProduct);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
 
         }
 
